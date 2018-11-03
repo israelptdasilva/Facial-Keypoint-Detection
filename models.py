@@ -1,37 +1,67 @@
-## TODO: define the convolutional neural network architecture
-
 import torch
-from torch.autograd import Variable
 import torch.nn as nn
-import torch.nn.functional as F
-# can use the below import should you choose to initialize the weights of your Net
-import torch.nn.init as I
 
+    
+""" 
+A CNN architecture influenced by NaimishNet and AlexNet. Mostly built by trial and
+error because the main purpose was to get some insights about CNN, its componenets and how 
+a framework like PyTorch can do the heavy lifting to build and train a model.
 
+    - Convolution | in: 1 | out: 32 | kernel: 10 x 10 | stride: 2
+    - Relu
+    - MaxPool     | kernel: 2 
+
+    - Convolution | in: 32 | out: 64 | kernel: 5 x 5 | stride: 2
+    - Relu
+    - MaxPool     | kernel: 2 
+
+    - Convolution | in: 64 | out: 128 | kernel: 5 x 5
+    - Relu
+    - MaxPool     | kernel: 2 
+
+    - Convolution | in: 128 | out: 256 | kernel: 3 x 3
+    - Relu
+    - MaxPool     | kernel: 2 
+
+    - Dense       | in: 256 | out: 256
+    - Relu
+
+    - Dense       | in: 256 | out: 136 
+    
+    References:
+        - https://arxiv.org/pdf/1710.00977.pdf
+        - https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf
+"""   
 class Net(nn.Module):
-
     def __init__(self):
         super(Net, self).__init__()
-        
-        ## TODO: Define all the layers of this CNN, the only requirements are:
-        ## 1. This network takes in a square (same width and height), grayscale image as input
-        ## 2. It ends with a linear layer that represents the keypoints
-        ## it's suggested that you make this last layer output 136 values, 2 for each of the 68 keypoint (x, y) pairs
-        
-        # As an example, you've been given a convolutional layer, which you may (but don't have to) change:
-        # 1 input image channel (grayscale), 32 output channels/feature maps, 5x5 square convolution kernel
-        self.conv1 = nn.Conv2d(1, 32, 5)
-        
-        ## Note that among the layers to add, consider including:
-        # maxpooling layers, multiple conv layers, fully-connected layers, and other layers (such as dropout or batch normalization) to avoid overfitting
-        
+        self.features = nn.Sequential(
+            nn.Conv2d(1, 32, 10, 2),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
 
-        
+            nn.Conv2d(32, 64, 5, 2),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            
+            nn.Conv2d(64, 128, 5),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            
+            nn.Conv2d(128, 256, 3),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2)
+        )
+            
+        self.classifier = nn.Sequential(
+            nn.Linear(256, 512),
+            nn.ReLU(),
+            nn.Linear(512, 136),
+        )
+
     def forward(self, x):
-        ## TODO: Define the feedforward behavior of this model
-        ## x is the input image and, as an example, here you may choose to include a pool/conv step:
-        ## x = self.pool(F.relu(self.conv1(x)))
-        
-        
-        # a modified x, having gone through all the layers of your model, should be returned
+        x = self.features(x)
+        x = x.view(x.size(0), -1)
+        x = self.classifier(x)            
         return x
+
